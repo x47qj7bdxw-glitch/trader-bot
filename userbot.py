@@ -3,20 +3,18 @@ import logging
 from pyrogram import Client, filters
 from dotenv import load_dotenv
 
-# ===== Загружаем .env =====
 load_dotenv()
 
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 session_name = "userbot"
 
-# ===== Настройки чатов =====
+# Чаты
 source_chat_id = -1003535658160
 source_thread_id = 412
 destination_chat_id = -1003696389874
 
-# ===== Словарь трейдеров =====
-# ключ = ID трейдера, значение = ветка в destination
+# Трейдеры
 traders_threads = {
     7575282612: 8,
     7276227554: 13,
@@ -29,15 +27,10 @@ traders_threads = {
     470443361: 9
 }
 
-# ===== Настройка логов =====
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
-# ===== Ловим сообщения из ветки форума =====
 @app.on_message(filters.chat(source_chat_id) & filters.forum(source_thread_id))
 async def forward_message(client, message):
     sender_id = message.from_user.id if message.from_user else None
@@ -48,54 +41,21 @@ async def forward_message(client, message):
     caption_prefix = f"[Трейдер {sender_id}]: "
 
     try:
-        # текст
         if message.text:
-            await client.send_message(
-                chat_id=destination_chat_id,
-                text=caption_prefix + message.text,
-                message_thread_id=thread_id
-            )
-
-        # фото
+            await client.send_message(destination_chat_id, caption_prefix + message.text, message_thread_id=thread_id)
         elif message.photo:
-            await client.send_photo(
-                chat_id=destination_chat_id,
-                photo=message.photo.file_id,
-                caption=caption_prefix + (message.caption or ""),
-                message_thread_id=thread_id
-            )
-
-        # видео
+            await client.send_photo(destination_chat_id, message.photo.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
         elif message.video:
-            await client.send_video(
-                chat_id=destination_chat_id,
-                video=message.video.file_id,
-                caption=caption_prefix + (message.caption or ""),
-                message_thread_id=thread_id
-            )
-
-        # документ
+            await client.send_video(destination_chat_id, message.video.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
         elif message.document:
-            await client.send_document(
-                chat_id=destination_chat_id,
-                document=message.document.file_id,
-                caption=caption_prefix + (message.caption or ""),
-                message_thread_id=thread_id
-            )
-
-        # стикер
+            await client.send_document(destination_chat_id, message.document.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
         elif message.sticker:
-            await client.send_sticker(
-                chat_id=destination_chat_id,
-                sticker=message.sticker.file_id,
-                message_thread_id=thread_id
-            )
+            await client.send_sticker(destination_chat_id, message.sticker.file_id, message_thread_id=thread_id)
 
         logging.info(f"Forwarded message from {sender_id} to thread {thread_id}")
 
     except Exception as e:
         logging.error(f"Error forwarding message from {sender_id}: {e}")
-
 
 if __name__ == "__main__":
     print("Userbot started, listening for messages...")

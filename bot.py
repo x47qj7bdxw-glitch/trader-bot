@@ -1,7 +1,7 @@
 import os
 import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor  # работает с aiogram 2.x
+from aiogram.utils import executor  # для aiogram 2.x
 
 API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
@@ -18,13 +18,14 @@ logging.basicConfig(
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-# Исходный чат (откуда читать сообщения)
+# Исходный чат и ветка (только эта ветка читаем)
 source_chat_id = -1003535658160
+source_thread_id = 412  # конкретная ветка
 
-# Чат назначения (куда форвардить)
+# Чат назначения
 destination_chat_id = -1003696389874
 
-# Словарь трейдеров: ключ = Telegram ID, значение = номер ветки (только для справки)
+# Словарь трейдеров: ключ = ID трейдера, значение = ветка в destination
 traders_threads = {
     7575282612: 8,
     7276227554: 13,
@@ -34,24 +35,25 @@ traders_threads = {
     343595815: 2,
     5593264601: 15,
     1604725555: 17,
-    470443361: 44  # запятая здесь не обязательна
+    470443361: 9
 }
 
 @dp.message_handler()
-async def forward_from_general(message: types.Message):
+async def forward_from_specific_thread(message: types.Message):
     try:
-        # Проверяем, что сообщение из нужного чата
-        if message.chat.id == source_chat_id:
+        # Только сообщения из нужной ветки исходного чата
+        if message.chat.id == source_chat_id and message.message_thread_id == source_thread_id:
             sender_id = message.from_user.id
             if sender_id in traders_threads:
-                # Форвардим сообщение в destination_chat
+                thread_id = traders_threads[sender_id]  # ветка в destination
                 await bot.forward_message(
                     chat_id=destination_chat_id,
                     from_chat_id=message.chat.id,
-                    message_id=message.message_id
+                    message_id=message.message_id,
+                    message_thread_id=thread_id
                 )
-                print(f"Forwarded message from {sender_id}")
-                logging.info(f"Forwarded message from {sender_id}")
+                print(f"Forwarded message from {sender_id} to thread {thread_id}")
+                logging.info(f"Forwarded message from {sender_id} to thread {thread_id}")
     except Exception as e:
         print(f"Error forwarding message: {e}")
         logging.error(f"Error forwarding message: {e}")

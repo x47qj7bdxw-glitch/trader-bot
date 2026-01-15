@@ -1,17 +1,16 @@
+import os
 import logging
 from pyrogram import Client, filters
 
-# ===== Настройки =====
-api_id = 30498405
-api_hash = "6a719128e749b7aced39613b0c5fb647"
+# ===== Настройки через переменные окружения =====
+api_id = int(os.environ.get("API_ID"))      # считывается из Railway Secrets
+api_hash = os.environ.get("API_HASH")      # считывается из Railway Secrets
 session_name = "userbot"
 
 source_chat_id = -1003535658160
 source_thread_id = 412
-
 destination_chat_id = -1003696389874
 
-# Словарь трейдеров: ключ = ID трейдера, значение = ветка в destination
 traders_threads = {
     7575282612: 8,
     7276227554: 13,
@@ -31,7 +30,6 @@ logging.basicConfig(
 
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
-# ===== Слушаем сообщения только из ветки 412 =====
 @app.on_message(filters.chat(source_chat_id) & filters.thread(source_thread_id))
 async def forward_message(client, message):
     sender_id = message.from_user.id
@@ -41,10 +39,12 @@ async def forward_message(client, message):
     thread_id = traders_threads[sender_id]
 
     try:
+        caption_prefix = f"[Трейдер {sender_id}]: "
+
         if message.text:
             await client.send_message(
                 chat_id=destination_chat_id,
-                text=f"[Трейдер {sender_id}]: {message.text}",
+                text=caption_prefix + message.text,
                 message_thread_id=thread_id
             )
 
@@ -52,7 +52,7 @@ async def forward_message(client, message):
             await client.send_photo(
                 chat_id=destination_chat_id,
                 photo=message.photo.file_id,
-                caption=f"[Трейдер {sender_id}]: {message.caption or ''}",
+                caption=caption_prefix + (message.caption or ""),
                 message_thread_id=thread_id
             )
 
@@ -60,7 +60,7 @@ async def forward_message(client, message):
             await client.send_video(
                 chat_id=destination_chat_id,
                 video=message.video.file_id,
-                caption=f"[Трейдер {sender_id}]: {message.caption or ''}",
+                caption=caption_prefix + (message.caption or ""),
                 message_thread_id=thread_id
             )
 
@@ -68,7 +68,7 @@ async def forward_message(client, message):
             await client.send_document(
                 chat_id=destination_chat_id,
                 document=message.document.file_id,
-                caption=f"[Трейдер {sender_id}]: {message.caption or ''}",
+                caption=caption_prefix + (message.caption or ""),
                 message_thread_id=thread_id
             )
 

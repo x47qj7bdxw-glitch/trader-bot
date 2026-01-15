@@ -46,17 +46,17 @@ async def forward_from_specific_thread(message: types.Message):
             sender_id = message.from_user.id
             if sender_id in traders_threads:
                 thread_id = traders_threads[sender_id]  # ветка в destination
-                await bot.forward_message(
+                await bot.copy_message(
                     chat_id=destination_chat_id,
                     from_chat_id=message.chat.id,
                     message_id=message.message_id,
                     message_thread_id=thread_id
                 )
-                print(f"Forwarded message from {sender_id} to thread {thread_id}")
-                logging.info(f"Forwarded message from {sender_id} to thread {thread_id}")
+                print(f"Copied message from {sender_id} to thread {thread_id}")
+                logging.info(f"Copied message from {sender_id} to thread {thread_id}")
     except Exception as e:
-        print(f"Error forwarding message: {e}")
-        logging.error(f"Error forwarding message: {e}")
+        print(f"Error copying message: {e}")
+        logging.error(f"Error copying message: {e}")
 
 if __name__ == "__main__":
     print("Bot started... Listening for messages")

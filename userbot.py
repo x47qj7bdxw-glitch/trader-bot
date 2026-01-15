@@ -16,6 +16,7 @@ source_thread_id = 412
 destination_chat_id = -1003696389874
 
 # ===== Словарь трейдеров =====
+# ключ = ID трейдера, значение = ветка в destination
 traders_threads = {
     7575282612: 8,
     7276227554: 13,
@@ -28,6 +29,7 @@ traders_threads = {
     470443361: 9
 }
 
+# ===== Настройка логов =====
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -35,17 +37,18 @@ logging.basicConfig(
 
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
-# ===== Функция пересылки сообщений =====
-@app.on_message(filters.chat(source_chat_id) & filters.thread(source_thread_id))
+# ===== Ловим сообщения из ветки форума =====
+@app.on_message(filters.chat(source_chat_id) & filters.forum(source_thread_id))
 async def forward_message(client, message):
-    sender_id = message.from_user.id
-    if sender_id not in traders_threads:
+    sender_id = message.from_user.id if message.from_user else None
+    if not sender_id or sender_id not in traders_threads:
         return
 
     thread_id = traders_threads[sender_id]
     caption_prefix = f"[Трейдер {sender_id}]: "
 
     try:
+        # текст
         if message.text:
             await client.send_message(
                 chat_id=destination_chat_id,
@@ -53,6 +56,7 @@ async def forward_message(client, message):
                 message_thread_id=thread_id
             )
 
+        # фото
         elif message.photo:
             await client.send_photo(
                 chat_id=destination_chat_id,
@@ -61,6 +65,7 @@ async def forward_message(client, message):
                 message_thread_id=thread_id
             )
 
+        # видео
         elif message.video:
             await client.send_video(
                 chat_id=destination_chat_id,
@@ -69,6 +74,7 @@ async def forward_message(client, message):
                 message_thread_id=thread_id
             )
 
+        # документ
         elif message.document:
             await client.send_document(
                 chat_id=destination_chat_id,
@@ -77,6 +83,7 @@ async def forward_message(client, message):
                 message_thread_id=thread_id
             )
 
+        # стикер
         elif message.sticker:
             await client.send_sticker(
                 chat_id=destination_chat_id,

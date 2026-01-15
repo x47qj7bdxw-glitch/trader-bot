@@ -1,16 +1,21 @@
 import os
 import logging
 from pyrogram import Client, filters
+from dotenv import load_dotenv
 
-# ===== Настройки через переменные окружения =====
-api_id = int(os.environ.get("API_ID"))      # считывается из Railway Secrets
-api_hash = os.environ.get("API_HASH")      # считывается из Railway Secrets
+# ===== Загружаем .env =====
+load_dotenv()
+
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
 session_name = "userbot"
 
+# ===== Настройки чатов =====
 source_chat_id = -1003535658160
 source_thread_id = 412
 destination_chat_id = -1003696389874
 
+# ===== Словарь трейдеров =====
 traders_threads = {
     7575282612: 8,
     7276227554: 13,
@@ -30,6 +35,7 @@ logging.basicConfig(
 
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
+# ===== Функция пересылки сообщений =====
 @app.on_message(filters.chat(source_chat_id) & filters.thread(source_thread_id))
 async def forward_message(client, message):
     sender_id = message.from_user.id
@@ -37,10 +43,9 @@ async def forward_message(client, message):
         return
 
     thread_id = traders_threads[sender_id]
+    caption_prefix = f"[Трейдер {sender_id}]: "
 
     try:
-        caption_prefix = f"[Трейдер {sender_id}]: "
-
         if message.text:
             await client.send_message(
                 chat_id=destination_chat_id,

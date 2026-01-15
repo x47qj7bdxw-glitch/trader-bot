@@ -11,7 +11,7 @@ session_name = "userbot"
 
 # ===== Чаты =====
 source_chat_id = -1003535658160
-source_thread_id = 412
+source_thread_id = 412  # Ветка форума, которую слушаем
 destination_chat_id = -1003696389874
 
 # ===== Словарь трейдеров =====
@@ -42,16 +42,24 @@ async def forward_message(client, message):
     caption_prefix = f"[Трейдер {sender_id}]: "
 
     try:
+        # Текст
         if message.text:
             await client.send_message(destination_chat_id, caption_prefix + message.text, message_thread_id=thread_id)
+        # Фото
         elif message.photo:
             await client.send_photo(destination_chat_id, message.photo.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+        # Видео
         elif message.video:
             await client.send_video(destination_chat_id, message.video.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+        # Документы
         elif message.document:
             await client.send_document(destination_chat_id, message.document.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+        # Стикеры
         elif message.sticker:
             await client.send_sticker(destination_chat_id, message.sticker.file_id, message_thread_id=thread_id)
+        # Альбомы (несколько фото/видео)
+        elif message.media_group_id:
+            await client.copy_media_group(destination_chat_id, message.chat.id, message.message_id, message_thread_id=thread_id)
 
         logging.info(f"Forwarded message from {sender_id} to thread {thread_id}")
 

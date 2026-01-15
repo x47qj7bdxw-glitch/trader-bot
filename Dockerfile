@@ -1,18 +1,24 @@
-# Базовый образ с Python 3.11
+# Берём slim образ Python 3.11
 FROM python:3.11-slim
 
-# Обновляем пакеты и ставим сборочные инструменты
-RUN apt-get update && apt-get install -y build-essential python3-dev libffi-dev
+# Ставим сборочные пакеты + libssl для aiohttp
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    libffi-dev \
+    libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Создаем рабочую директорию
+# Рабочая директория
 WORKDIR /app
 
-# Копируем файлы проекта
+# Копируем весь проект
 COPY . /app
 
-# Устанавливаем зависимости
+# Обновляем pip и ставим зависимости
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Запуск бота
+# Команда запуска бота
 CMD ["python", "bot.py"]

@@ -1,5 +1,5 @@
 # Берём slim образ Python 3.11
-FROM python:3.11-slim
+FROM python:3.11
 
 # Ставим сборочные пакеты + libssl для aiohttp
 RUN apt-get update && apt-get install -y \

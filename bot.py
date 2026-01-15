@@ -1,7 +1,7 @@
 import os
 import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor  # для aiogram 2.x
+from aiogram.utils import executor
 
 API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
@@ -20,7 +20,7 @@ dp = Dispatcher(bot)
 
 # Исходный чат и ветка (только эта ветка читаем)
 source_chat_id = -1003535658160
-source_thread_id = 412  # конкретная ветка
+source_thread_id = 412
 
 # Чат назначения
 destination_chat_id = -1003696389874
@@ -41,22 +41,73 @@ traders_threads = {
 @dp.message_handler()
 async def forward_from_specific_thread(message: types.Message):
     try:
-        # Только сообщения из нужной ветки исходного чата
+        # Проверяем чат и ветку
         if message.chat.id == source_chat_id and message.message_thread_id == source_thread_id:
             sender_id = message.from_user.id
             if sender_id in traders_threads:
-                thread_id = traders_threads[sender_id]  # ветка в destination
-                await bot.copy_message(
-                    chat_id=destination_chat_id,
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id,
-                    message_thread_id=thread_id
-                )
-                print(f"Copied message from {sender_id} to thread {thread_id}")
-                logging.info(f"Copied message from {sender_id} to thread {thread_id}")
+                thread_id = traders_threads[sender_id]
+
+                # Текстовые сообщения
+                if message.content_type == "text":
+                    await bot.send_message(
+                        chat_id=destination_chat_id,
+                        text=message.text,
+                        message_thread_id=thread_id
+                    )
+
+                # Фото
+                elif message.content_type == "photo":
+                    photo = message.photo[-1]  # самая большая
+                    caption = message.caption or ""
+                    file = await bot.get_file(photo.file_id)
+                    await bot.send_photo(
+                        chat_id=destination_chat_id,
+                        photo=file.file_id,
+                        caption=caption,
+                        message_thread_id=thread_id
+                    )
+
+                # Видео
+                elif message.content_type == "video":
+                    video = message.video
+                    caption = message.caption or ""
+                    file = await bot.get_file(video.file_id)
+                    await bot.send_video(
+                        chat_id=destination_chat_id,
+                        video=file.file_id,
+                        caption=caption,
+                        message_thread_id=thread_id
+                    )
+
+                # Документы
+                elif message.content_type == "document":
+                    doc = message.document
+                    file = await bot.get_file(doc.file_id)
+                    await bot.send_document(
+                        chat_id=destination_chat_id,
+                        document=file.file_id,
+                        caption=message.caption or "",
+                        message_thread_id=thread_id
+                    )
+
+                # Стикеры
+                elif message.content_type == "sticker":
+                    await bot.send_sticker(
+                        chat_id=destination_chat_id,
+                        sticker=message.sticker.file_id,
+                        message_thread_id=thread_id
+                    )
+
+                # Любые другие типы (ограничение API)
+                else:
+                    print(f"Необработанный тип сообщения: {message.content_type}")
+
+                logging.info(f"Message from {sender_id} forwarded to thread {thread_id}")
+
     except Exception as e:
-        print(f"Error copying message: {e}")
-        logging.error(f"Error copying message: {e}")
+        print(f"Error forwarding message: {e}")
+        logging.error(f"Error forwarding message: {e}")
+
 
 if __name__ == "__main__":
     print("Bot started... Listening for messages")

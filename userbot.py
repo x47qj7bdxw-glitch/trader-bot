@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ===== Настройки API =====
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 session_name = "userbot"
@@ -34,7 +35,7 @@ app = Client(session_name, api_id=api_id, api_hash=api_hash)
 # ===== Ловим сообщения строго из ветки форума =====
 @app.on_message(filters.chat(source_chat_id) & filters.forum(source_thread_id))
 async def forward_message(client, message):
-    sender_id = message.from_user.id if message.from_user else None
+    sender_id = getattr(message.from_user, "id", None)
     if not sender_id or sender_id not in traders_threads:
         return
 
@@ -45,21 +46,50 @@ async def forward_message(client, message):
         # Текст
         if message.text:
             await client.send_message(destination_chat_id, caption_prefix + message.text, message_thread_id=thread_id)
+
         # Фото
         elif message.photo:
-            await client.send_photo(destination_chat_id, message.photo.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+            await client.send_photo(
+                destination_chat_id,
+                message.photo.file_id,
+                caption=caption_prefix + (message.caption or ""),
+                message_thread_id=thread_id
+            )
+
         # Видео
         elif message.video:
-            await client.send_video(destination_chat_id, message.video.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+            await client.send_video(
+                destination_chat_id,
+                message.video.file_id,
+                caption=caption_prefix + (message.caption or ""),
+                message_thread_id=thread_id
+            )
+
         # Документы
         elif message.document:
-            await client.send_document(destination_chat_id, message.document.file_id, caption=caption_prefix + (message.caption or ""), message_thread_id=thread_id)
+            await client.send_document(
+                destination_chat_id,
+                message.document.file_id,
+                caption=caption_prefix + (message.caption or ""),
+                message_thread_id=thread_id
+            )
+
         # Стикеры
         elif message.sticker:
-            await client.send_sticker(destination_chat_id, message.sticker.file_id, message_thread_id=thread_id)
+            await client.send_sticker(
+                destination_chat_id,
+                message.sticker.file_id,
+                message_thread_id=thread_id
+            )
+
         # Альбомы (несколько фото/видео)
         elif message.media_group_id:
-            await client.copy_media_group(destination_chat_id, message.chat.id, message.message_id, message_thread_id=thread_id)
+            await client.copy_media_group(
+                destination_chat_id,
+                message.chat.id,
+                message.message_id,
+                message_thread_id=thread_id
+            )
 
         logging.info(f"Forwarded message from {sender_id} to thread {thread_id}")
 
